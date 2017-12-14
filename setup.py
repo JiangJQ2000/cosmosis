@@ -54,19 +54,37 @@ cc_headers = [
 f90_objects = [f[:-4]+".o" for f in f90_files]
 f90_headers = [f[:-4]+".mod" for f in f90_files]
 
-def compile_fortran():
-    compiler = os.environ.get("FC", "gfortran")
-    flags = os.environ.get("FFLAGS", "-O3 -g -fPIC") + " -std=gnu -ffree-line-length-none"
-    include = "-I."
-    os.chdir('cosmosis/datablock/cosmosis_f90')
+def compile_library():
+    cosmosis_src_dir = os.getcwd()
+    os.chdir('cosmosis/datablock/')
     try:
-        for filename in f90_files:
-            output = filename[:-4]+".o"
-            cmd = "{compiler} {flags} {include}  -c {filename}".format(**locals())
-            os.system(cmd)
+        status = os.system("COSMOSIS_ALT_COMPILERS=1 COSMOSIS_SRC_DIR={} make".format(cosmosis_src_dir))
     finally:
-        os.chdir('../../..')
-compile_fortran()
+        os.chdir('../../')
+    if status:
+        raise RuntimeError("Failed to compile cosmosis core")
+
+def setup_compilers():
+    try:
+        cc = os.environ['CC']
+        fc = os.environ['FC']
+        cxx = os.environ['CXX']
+    except KeyError:
+        sys.stderr.write("For the avoidance of confusion you need to set\n")
+        sys.stderr.write("These environment variables before installing cosmosis:\n")
+        sys.stderr.write("CC, FC, CXX for the C compiler, fortran compiler, and C++ compiler.\n\n")
+        sys.exit(1)
+    f = open("./cosmosis/compilers.py", "w")
+    f.write("compilers = '''\n".format(cc))
+    f.write("export CC={}\n".format(cc))
+    f.write("export FC={}\n".format(fc))
+    f.write("export CXX={}\n".format(cxx))
+    f.write("export COSMOSIS_ALT_COMPILERS=1\n")
+    f.write("'''\n")
+    f.close()
+
+setup_compilers()
+compile_library()
 
 ext1 = Extension(
     name = 'libcosmosis', 
@@ -75,6 +93,8 @@ ext1 = Extension(
     extra_objects = f90_objects,
     extra_link_args = ['-lgfortran', '-lstdc++']
 )
+
+
 
 
 if __name__ == "__main__":
@@ -86,5 +106,6 @@ if __name__ == "__main__":
           packages = find_packages(),
           include_package_data = True,
           scripts = scripts,
+          install_requires = ['pyyaml', 'future', 'configparser', 'emcee', 'numpy', 'scipy']
           )
 
