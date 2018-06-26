@@ -5,7 +5,7 @@ from distutils.command.install import install
 from distutils.command.build import build
 import os
 
-version = '0.0.6'
+version = '0.0.7'
 
 cc_files = [
     "cosmosis/datablock/c_datablock.cc",
