@@ -43,3 +43,7 @@ dist/
 build/
 cosmosis.egg-info/
 cosmosis/compilers.py
+*~
+
+install-record.txt
+*.egg-info
