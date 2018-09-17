@@ -16,6 +16,3 @@ test:
 clean:
 	$(process_subdirs)
 
-install:
-  $(process_subbdirs)
-
