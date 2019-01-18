@@ -22,6 +22,7 @@ f90_mods = [
 
 scripts = [
     'bin/cosmosis',
+    'bin/cosmosis_main.py',
     'bin/cosmosis-py2',
     'bin/cosmosis-py3',
     'bin/cosmosis-ini-from-output',
