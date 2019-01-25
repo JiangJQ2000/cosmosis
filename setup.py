@@ -154,7 +154,7 @@ setup(name = 'cosmosis-standalone',
                             + c_headers + cc_headers + f90_mods 
                             + compilers_config,},
         scripts = scripts,
-        install_requires = ['pyyaml', 'emcee', 'numpy', 'scipy'],
+        install_requires = ['pyyaml', 'future', 'emcee', 'numpy', 'scipy'],
         cmdclass={"install"   : my_install,
                 "build"     : my_build,
                 "build_ext" : my_build,
