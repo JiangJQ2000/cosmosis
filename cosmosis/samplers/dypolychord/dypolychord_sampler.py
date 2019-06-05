@@ -42,12 +42,8 @@ class DyPolyChordSampler(ParallelSampler):
         self.nlive_const           = self.read_ini("nlive_const", int, 100)
         self.ninit                 = self.read_ini("ninit", int, 10)
 
-        #Required options
-        self.live_points            = self.read_ini("live_points", int, 100)
-
         #Output and feedback options
         self.feedback               = self.read_ini("feedback", int, 1)
-        self.resume                 = self.read_ini("resume", bool, False)
         self.file_root              = self.read_ini("file_root", str, "")
         self.base_dir               = self.read_ini("base_dir", str, ".")
         self.compression_factor     = self.read_ini("compression_factor", float, np.exp(-1))
@@ -55,17 +51,8 @@ class DyPolyChordSampler(ParallelSampler):
         os.makedirs(self.base_dir, exist_ok=True)
         os.makedirs(os.path.join(self.base_dir, "clusters"), exist_ok=True)
 
-        #General run options
         self.max_iterations              = self.read_ini("max_iterations", int, -1)
-        self.num_repeats                 = self.read_ini("num_repeats", int, 0)
-        self.nprior                      = self.read_ini("nprior", int, -1)
-        self.random_seed                 = self.read_ini("random_seed", int, -1)
-        self.precision_criterion         = self.read_ini("precision_criterion", float, 0.001)
-        self.log_zero                    = self.read_ini("log_zero", float, -1e30)
-        self.weighted_posteriors         = self.read_ini("weighted_posteriors", bool, True)
-        self.equally_weighted_posteriors = self.read_ini("equally_weighted_posteriors", bool, True)       
-        self.do_clustering               = self.read_ini("do_clustering", bool, True)
-
+        self.precision_criterion         = self.read_ini("precision_criterion", float, 0.01)
         self.fast_fraction    = self.read_ini("fast_fraction", float, 0.5)
 
         if self.pipeline.do_fast_slow:
@@ -76,36 +63,53 @@ class DyPolyChordSampler(ParallelSampler):
             self.grade_dims = [self.pipeline.nvaried]
             self.grade_frac = [1.0]
 
-        if self.num_repeats == 0:
-            self.num_repeats = 5 * self.grade_dims[0]
-            print("Polychord num_repeats = {}  (5 * n_slow_params [{}])".format(self.num_repeats, self.grade_dims[0]))
-        else:
-            print("Polychord num_repeats = {}  (from parameter file)".format(self.num_repeats))
-
-        self.polychord_settings_dict = {"nlive"               : self.live_points,
-                                        "num_repeats"         : self.num_repeats,
-                                        "nprior"              : self.nprior,
-                                        "do_clustering"       : self.do_clustering,
-                                        "feedback"            : self.feedback,
+        self.polychord_settings_dict = {"feedback"            : self.feedback,
                                         "precision_criterion" : self.precision_criterion,
-                                        "logzero"             : self.log_zero,
                                         "max_ndead"           : self.max_iterations,
-                                        "posteriors"          : self.weighted_posteriors,
-                                        "equals"              : self.equally_weighted_posteriors,
-                                        "write_dead"          : True,
-                                        "write_stats"         : True,
-                                        "write_paramnames"    : False,
-                                        "write_prior"         : False,
-                                        "write_live"          : False,
-                                        "write_resume"        : False,
-                                        "read_resume"         : False,
                                         "compression_factor"  : self.compression_factor,
                                         "grade_dims"          : self.grade_dims,
                                         "grade_frac"          : self.grade_frac,
                                         "base_dir"            : self.base_dir,
                                         "file_root"           : self.file_root,
-                                        "seed"                : self.random_seed,
                                         }
+        try:
+            random_seed                 = self.read_ini("random_seed", int)
+            self.polychord_settings_dict["seed"] = random_seed
+        except:
+            pass
+
+        if not self.do_dynamic_nested_sampling:
+            #Polychord options
+            self.num_repeats                 = self.read_ini("num_repeats", int, 0)
+            if self.num_repeats == 0:
+                self.num_repeats = 5 * self.grade_dims[0]
+                print("Polychord num_repeats = {}  (5 * n_slow_params [{}])".format(self.num_repeats, self.grade_dims[0]))
+            else:
+                print("Polychord num_repeats = {}  (from parameter file)".format(self.num_repeats))
+
+            self.live_points            = self.read_ini("live_points", int, 100)
+            self.resume                 = self.read_ini("resume", bool, False)
+            
+            self.nprior                      = self.read_ini("nprior", int, -1)
+            self.log_zero                    = self.read_ini("log_zero", float, -1e30)
+            self.weighted_posteriors         = self.read_ini("weighted_posteriors", bool, True)
+            self.equally_weighted_posteriors = self.read_ini("equally_weighted_posteriors", bool, False)       
+            self.do_clustering               = self.read_ini("do_clustering", bool, True)
+            
+            self.polychord_settings_dict.update({"nlive"               : self.live_points,
+                                                 "num_repeats"         : self.num_repeats,
+                                                 "nprior"              : self.nprior,
+                                                 "do_clustering"       : self.do_clustering,
+                                                 "posteriors"          : self.weighted_posteriors,
+                                                 "equals"              : self.equally_weighted_posteriors,
+                                                 "write_dead"          : True,
+                                                 "write_stats"         : True,
+                                                 "write_paramnames"    : False,
+                                                 "write_prior"         : False,
+                                                 "write_live"          : False,
+                                                 "write_resume"        : False,
+                                                 "read_resume"         : False,
+                                                })
 
 
         if self.output:
@@ -183,12 +187,12 @@ class DyPolyChordSampler(ParallelSampler):
     def output_params(self, live, dead, logweights, log_z, log_z_err):
         self.log_z = log_z
         self.log_z_err = log_z_err
-        ndead = dead.shape[1]
+        ndead = dead.shape[0]
         for i in range(ndead):
-            params = dead[:self.ndim,i]
-            extra_vals = dead[self.ndim:self.ndim+self.nderived,i]
-            birth_like = dead[self.ndim+self.nderived,i]
-            like = dead[self.ndim+self.nderived+1,i]
+            params = dead[i,:self.ndim]
+            extra_vals = dead[i,self.ndim:self.ndim+self.nderived]
+            birth_like = dead[i,self.ndim+self.nderived]
+            like = dead[i,self.ndim+self.nderived+1]
             importance = np.exp(logweights[i])
             self.output.parameters(params, extra_vals, like, importance)
         self.output.final("nsample", ndead)
