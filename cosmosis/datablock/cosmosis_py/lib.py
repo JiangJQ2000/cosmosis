@@ -2,12 +2,8 @@ import ctypes as ct
 from . import dbt_types
 import os
 
-source_dir = os.path.dirname(__file__)
-libcosmosis_path = source_dir + "/../libcosmosis.so"
-
-import os
 dirname = os.path.split(__file__)[0]
-libpath = os.path.join(dirname, os.path.pardir, os.path.pardir, os.path.pardir, "libcosmosis.so")
+libpath = os.path.join(dirname, os.path.pardir, "libcosmosis.so")
 dll = ct.cdll.LoadLibrary(libpath)
 
 # We export a symbol in the C code to tell us this

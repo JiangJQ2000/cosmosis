@@ -6,6 +6,7 @@ import pkg_resources
 import subprocess
 
 import os
+import sys
 
 import cosmosis
 version = cosmosis.__version__
@@ -121,13 +122,6 @@ class my_build(build):
         compile_library(env)
         super().run()
 
-ext1 = Extension(
-    name = 'libcosmosis', 
-    sources = cc_files,
-    extra_compile_args=['-std=c++1y'],
-    extra_objects = f90_objects,
-    extra_link_args = ['-lgfortran', '-lstdc++']
-)
 
 class my_install(install):
     def __init__(self, dist):

@@ -18,6 +18,7 @@ endif
 #CXXFLAGS+=-I../../
 #CFLAGS+=-I../../
 
+F90DIR = cosmosis_f90
 
 all: libcosmosis.so libcosmosis_fortran.so cosmosis_py/section_names.py
 
@@ -31,9 +32,8 @@ clean:
 	rm -f c_datablock_multidim_int_array_t
 	rm -f c_datablock_multidim_complex_array_t
 	rm -f datablock_t entry_t fortran_t ndarray_t section_t
-	rm -f section_names.h cosmosis_py/section_names.py cosmosis_f90/cosmosis_section_names.F90
+	rm -f section_names.h cosmosis_py/section_names.py $(F90DIR)/cosmosis_section_names.F90
 	rm -rf  *.dSYM/
-	rm -f cosmosis_py/section_names.py section_names.h cosmosis_section_names.F90
 
 verify_setup:
 	@if [ -z "$(SETUP_UPS)" ]; then echo "You must setup UPS first" && exit 1; fi
@@ -115,8 +115,8 @@ test_python:
 section_names.h: section_names.txt generate_sections.py
 	python generate_sections.py section_names.txt c section_names.h
 
-cosmosis_f90/cosmosis_section_names.F90: section_names.txt generate_sections.py
-	python generate_sections.py section_names.txt fortran cosmosis_f90/cosmosis_section_names.F90
+$(F90DIR)/cosmosis_section_names.F90: section_names.txt generate_sections.py
+	python generate_sections.py section_names.txt fortran $(F90DIR)/cosmosis_section_names.F90
 
 cosmosis_py/section_names.py: section_names.txt generate_sections.py 
 	python generate_sections.py section_names.txt python cosmosis_py/section_names.py
@@ -130,7 +130,7 @@ cosmosis_py/section_names.py: section_names.txt generate_sections.py
 # problem of generating dependencies for the Fortran modules within
 # libcomsosis_fortran.so. The tradeoff is worthwhile, unless so many source
 # files are added that the build time is excessive.
-libcosmosis.so: cosmosis_section_names.F90 cosmosis_types.F90 cosmosis_wrappers.F90 cosmosis_modules.F90 libcosmosis_c.a
+libcosmosis.so: $(F90DIR)/cosmosis_section_names.F90 $(F90DIR)/cosmosis_types.F90 $(F90DIR)/cosmosis_wrappers.F90 $(F90DIR)/cosmosis_modules.F90 libcosmosis_c.a
 	$(FC) $(FFLAGS) -shared -o $@ $+ $(LDFLAGS) -lstdc++ -lgfortran $(RPATH)
 
 libcosmosis_cxx.so: libcosmosis_c.a
