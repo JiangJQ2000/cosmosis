@@ -14,7 +14,7 @@ DYPOLYCHORD_SECTION='dypolychord'
 
 class DyPolyChordSampler(ParallelSampler):
     parallel_output = False
-    sampler_outputs = [("post", float), ("weight", float)]
+    sampler_outputs = [("prior", float), ("like", float), ("weight", float)]
     supports_smp=False
     understands_fast_subspaces = True
 
@@ -194,7 +194,9 @@ class DyPolyChordSampler(ParallelSampler):
             birth_like = dead[i,self.ndim+self.nderived]
             like = dead[i,self.ndim+self.nderived+1]
             importance = np.exp(logweights[i])
-            self.output.parameters(params, extra_vals, like, importance)
+            # PolyChord doesn't store prior values but we can get them ourselves
+            prior = self.pipeline.prior(params)
+            self.output.parameters(params, extra_vals, prior, like, importance)
         self.output.final("nsample", ndead)
         self.output.flush()
 
