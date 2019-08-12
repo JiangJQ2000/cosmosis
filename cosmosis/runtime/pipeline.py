@@ -27,7 +27,7 @@ from . import config
 from . import parameter
 from . import prior
 from . import module
-from cosmosis.datablock.cosmosis_py import block
+from cosmosis.datablock.cosmosis_py import block, errors
 import cosmosis.datablock.cosmosis_py as cosmosis_py
 try:
     import faulthandler
@@ -1140,6 +1140,10 @@ class LikelihoodPipeline(Pipeline):
                 for name,pr in priors:
                     r.block["priors", name] = pr
 
+        except errors.ZeroLikelihood as e:
+            if not self.quiet:
+                print("Pipeline exited while indicating that the likelihood is zero:", e)
+            r.like = -np.inf
         except Exception:
             if self.debug:
                 sys.stderr.write("\n\nERROR: there was an exception running the likelihood:\n")
