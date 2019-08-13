@@ -11,8 +11,8 @@ import sys
 import cosmosis
 version = cosmosis.__version__
 
-minimum_cc_version = pkg_resources.parse_version("5.0.0")
-minimum_cxx_version = pkg_resources.parse_version("5.0.0")
+#minimum_cc_version = pkg_resources.parse_version("5.0.0")
+#minimum_cxx_version = pkg_resources.parse_version("5.0.0")
 
 f90_mods = [
     "datablock/cosmosis_section_names.mod",
@@ -99,17 +99,17 @@ def check_compilers():
            "FC"    : os.environ["FC"] if "FC" in os.environ else default_fc,
            "MPIFC" : os.environ["MPIFC"] if "MPIFC" in os.environ else default_mpifc,}
 
-    cc_version = subprocess.check_output("${CC} -dumpversion", shell=True, env=env).decode("utf-8")
-    cxx_version = subprocess.check_output("${CXX} -dumpversion", shell=True, env=env).decode("utf-8")
-    fc_version = subprocess.check_output("${FC} -dumpversion", shell=True, env=env).decode("utf-8")
+    #cc_version = subprocess.check_output("${CC} -dumpversion", shell=True, env=env).decode("utf-8")
+    #cxx_version = subprocess.check_output("${CXX} -dumpversion", shell=True, env=env).decode("utf-8")
+    #fc_version = subprocess.check_output("${FC} -dumpversion", shell=True, env=env).decode("utf-8")
 
-    cc_version = pkg_resources.parse_version(cc_version)
-    cxx_version = pkg_resources.parse_version(cxx_version)
+    #cc_version = pkg_resources.parse_version(cc_version)
+    #cxx_version = pkg_resources.parse_version(cxx_version)
 
-    if cc_version < minimum_cc_version:
-        raise RuntimeError(f"GCC compiler version ({cc_version}) does not meet requirements ({minimum_cc_version}).")
-    if cxx_version < minimum_cxx_version:
-        raise RuntimeError(f"G++ compiler version ({cxx_version}) does not meet requirements ({minimum_cxx_version}).")
+    #if cc_version < minimum_cc_version:
+    #    raise RuntimeError(f"GCC compiler version ({cc_version}) does not meet requirements ({minimum_cc_version}).")
+    #if cxx_version < minimum_cxx_version:
+    #    raise RuntimeError(f"G++ compiler version ({cxx_version}) does not meet requirements ({minimum_cxx_version}).")
     
     if env["MPIFC"] == "":
         print("Compiling CosmoSIS without MPI support. If MPI support is required, set MPIFC.")
