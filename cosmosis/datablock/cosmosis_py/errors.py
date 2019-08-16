@@ -85,8 +85,6 @@ class BlockError(CosmosisError):
     def __str__(self):
         return ERROR_MESSAGES[self.status].format(status=self.status, name=self.name,section=self.section)
 
-class ZeroLikelihood(CosmosisError):
-    pass
 
 def underscore_to_camelcase(value):
     return "".join(str.capitalize(x) if x else '_' for x in value.split("_"))
