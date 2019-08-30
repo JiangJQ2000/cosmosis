@@ -53,7 +53,7 @@ class DyPolyChordSampler(ParallelSampler):
 
         self.max_iterations              = self.read_ini("max_iterations", int, -1)
         self.precision_criterion         = self.read_ini("precision_criterion", float, 0.01)
-        self.fast_fraction    = self.read_ini("fast_fraction", float, 0.5)
+        self.fast_fraction               = self.read_ini("fast_fraction", float, 0.5)
 
         if self.pipeline.do_fast_slow:
             self.grade_dims = self.pipeline.n_slow_params, self.pipeline.n_fast_params
@@ -89,12 +89,15 @@ class DyPolyChordSampler(ParallelSampler):
 
             self.live_points            = self.read_ini("live_points", int, 100)
             self.resume                 = self.read_ini("resume", bool, False)
+            self.polychord_output       = self.read_ini("polychord_output", bool, True)
+            self.write_resume           = self.read_ini("write_resume", bool, True)
             
             self.nprior                      = self.read_ini("nprior", int, -1)
             self.log_zero                    = self.read_ini("log_zero", float, -1e30)
             self.weighted_posteriors         = self.read_ini("weighted_posteriors", bool, True)
-            self.equally_weighted_posteriors = self.read_ini("equally_weighted_posteriors", bool, False)       
+            self.equally_weighted_posteriors = self.read_ini("equally_weighted_posteriors", bool, True)       
             self.do_clustering               = self.read_ini("do_clustering", bool, True)
+            self.boost_posterior             = self.read_ini("boost_posterior", float, 0.0)
             
             self.polychord_settings_dict.update({"nlive"               : self.live_points,
                                                  "num_repeats"         : self.num_repeats,
@@ -102,13 +105,14 @@ class DyPolyChordSampler(ParallelSampler):
                                                  "do_clustering"       : self.do_clustering,
                                                  "posteriors"          : self.weighted_posteriors,
                                                  "equals"              : self.equally_weighted_posteriors,
-                                                 "write_dead"          : True,
+                                                 "boost_posterior"     : self.boost_posterior,
+                                                 "write_dead"          : self.polychord_output,
                                                  "write_stats"         : True,
                                                  "write_paramnames"    : False,
-                                                 "write_prior"         : False,
-                                                 "write_live"          : False,
-                                                 "write_resume"        : False,
-                                                 "read_resume"         : False,
+                                                 "write_prior"         : self.polychord_output,
+                                                 "write_live"          : self.polychord_output,
+                                                 "write_resume"        : self.write_resume,
+                                                 "read_resume"         : self.resume,
                                                 })
 
 
