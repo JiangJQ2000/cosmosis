@@ -6,8 +6,10 @@ USER_CXXFLAGS=$(PEDANTIC_C_FLAGS)
 detected_OS := $(shell uname -s)
 ifeq ($(detected_OS),Darwin)
 RPATH=-install_name @rpath/libcosmosis.so
+CXXRUNTIME = -lc++
 else
 RPATH=
+CXXRUNTIME = -lstdc++
 endif
 #CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
 #CXXFLAGS=-std=c++11 -O0 -Wall -Wextra -pedantic -fPIC -g
@@ -131,10 +133,10 @@ cosmosis_py/section_names.py: section_names.txt generate_sections.py
 # libcomsosis_fortran.so. The tradeoff is worthwhile, unless so many source
 # files are added that the build time is excessive.
 libcosmosis.so: $(F90DIR)/cosmosis_section_names.F90 $(F90DIR)/cosmosis_types.F90 $(F90DIR)/cosmosis_wrappers.F90 $(F90DIR)/cosmosis_modules.F90 libcosmosis_c.a
-	$(FC) $(FFLAGS) -shared -o $@ $+ $(LDFLAGS) -lstdc++ -lgfortran $(RPATH)
+	$(FC) $(FFLAGS) -shared -o $@ $+ $(LDFLAGS) $(CXXRUNTIME) -lgfortran $(RPATH)
 
 libcosmosis_cxx.so: libcosmosis_c.a
-	$(CXX) $(CXXFLAGS) -shared -o $@ $+ $(LDFLAGS) -lstdc++ $(RPATH)
+	$(CXX) $(CXXFLAGS) -shared -o $@ $+ $(LDFLAGS) $(CXXRUNTIME) $(RPATH)
 
 libcosmosis_fortran.so: libcosmosis.so
 	ln -s libcosmosis.so libcosmosis_fortran.so
