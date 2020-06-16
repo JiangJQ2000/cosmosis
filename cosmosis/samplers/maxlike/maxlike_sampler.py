@@ -13,6 +13,7 @@ class MaxlikeSampler(Sampler):
         self.output_cov = self.read_ini("output_covmat", str, "")
         self.method = self.read_ini("method",str,"Nelder-Mead")
         self.max_posterior = self.read_ini("max_posterior", bool, False)
+        self.output_steps = self.read_ini("output_steps", bool, False)
 
         if self.max_posterior:
             print("------------------------------------------------")
@@ -38,23 +39,38 @@ class MaxlikeSampler(Sampler):
             if (not np.all(p_in>=0)) or (not np.all(p_in<=1)):
                 return np.inf
             p = self.pipeline.denormalize_vector(p_in)
-            if self.max_posterior:
-                like, extra = self.pipeline.posterior(p)
-                self.output.log_debug("%s  post=%f"%('   '.join(str(x) for x in p),like))
+            
+            if self.output_steps:
+                results = self.pipeline.run_results(p)
+                self.output.parameters(p, results.extra, results.prior, results.like, results.post)
+                if self.max_posterior:
+                    return -results.post
+                else:
+                    return -results.like
             else:
-                like, extra = self.pipeline.likelihood(p)
-                self.output.log_debug("%s  like=%f"%('   '.join(str(x) for x in p),like))
-            return -like
+                if self.max_posterior:
+                    like, extra = self.pipeline.posterior(p)
+                    self.output.log_debug("%s  post=%f"%('   '.join(str(x) for x in p),like))
+                else:
+                    like, extra = self.pipeline.likelihood(p)
+                    self.output.log_debug("%s  like=%f"%('   '.join(str(x) for x in p),like))
+                return -like
 
         # starting position in the normalized space.  This will be taken from
         # a previous sampler if available, or the values file if not.
         start_vector = self.pipeline.normalize_vector(self.start_estimate())
         bounds = [(0.0, 1.0) for p in self.pipeline.varied_params]
 
+        options = {'maxiter':self.maxiter, 'disp':True}
+        if self.method == "Nelder-Mead":
+            print("Using adaptive Nelder-Mead")
+            options = {**options, 'xatol':1e-3, 'fatol':1e-2, 'adaptive':True}
+        else:
+            print(f"Using {self.method}")
 
         result = scipy.optimize.minimize(likefn, start_vector, method=self.method, 
           jac=False, tol=self.tolerance,  #bounds=bounds, 
-          options={'maxiter':self.maxiter, 'disp':True})
+          options=options)
 
         opt_norm = result.x
         opt = self.pipeline.denormalize_vector(opt_norm)
