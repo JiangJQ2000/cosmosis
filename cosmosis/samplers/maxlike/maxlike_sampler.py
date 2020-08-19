@@ -14,6 +14,16 @@ class MaxlikeSampler(Sampler):
         self.method = self.read_ini("method",str,"Nelder-Mead")
         self.max_posterior = self.read_ini("max_posterior", bool, False)
         self.output_steps = self.read_ini("output_steps", bool, False)
+        self.flush_steps = self.read_ini("flush_steps", int, 10)
+        self.step_size = self.read_ini("step_size", float, -1.0)
+        self.force_file_reopen = self.read_ini("force_file_reopen", bool, False)
+
+        self.ftol = self.read_ini("ftol", float, -1.0)
+        self.xtol = self.read_ini("xtol", float, -1.0)
+        self.gtol = self.read_ini("gtol", float, -1.0)
+        self.grad_eps = self.read_ini("grad_eps", float, -1.0)
+
+        self.lbfgs_maxcor = self.read_ini("lbfgs_maxcor", int, -1)
 
         if self.max_posterior:
             print("------------------------------------------------")
@@ -29,6 +39,7 @@ class MaxlikeSampler(Sampler):
             print("NOTE: priors in a separate priors file.")
             print("--------------------------------------------------")
 
+        self.steps_since_last_flush = 0
         self.converged = False
 
     def execute(self):
@@ -43,6 +54,14 @@ class MaxlikeSampler(Sampler):
             if self.output_steps:
                 results = self.pipeline.run_results(p)
                 self.output.parameters(p, results.extra, results.prior, results.like, results.post)
+                if self.steps_since_last_flush > self.flush_steps:
+                    self.output.flush()
+                    self.steps_since_last_flush = 0
+                    if self.force_file_reopen:
+                        self.output._file.close()
+                        self.output._file = open(self.output._filename, "a+")
+                else:
+                    self.steps_since_last_flush += 1
                 if self.max_posterior:
                     return -results.post
                 else:
@@ -65,11 +84,29 @@ class MaxlikeSampler(Sampler):
         if self.method == "Nelder-Mead":
             print("Using adaptive Nelder-Mead")
             options = {**options, 'xatol':1e-3, 'fatol':1e-2, 'adaptive':True}
+        elif self.method == "Powell":
+            print(f"Using {self.method}")
+            if self.step_size > 0:
+                print(f"Using step size {self.step_size}")
+                search_directions = self.step_size * np.eye(len(self.pipeline.varied_params))
+                options = {**options, "direc" : search_directions}
+        elif self.method == "L-BFGS-B":
+            if self.ftol > 0.0:
+                options["ftol"] = self.ftol
+            if self.gtol > 0.0:
+                options["gtol"] = self.gtol
+            if self.grad_eps > 0.0:
+                options["eps"] = self.grad_eps
+            if self.lbfgs_maxcor > 0:
+                options["maxcor"] = self.lbfgs_maxcor
+            else:
+                options["maxcor"] = len(self.pipeline.varied_params)*2
+            print(f"Using {self.method} with options {options}")
         else:
             print(f"Using {self.method}")
 
         result = scipy.optimize.minimize(likefn, start_vector, method=self.method, 
-          jac=False, tol=self.tolerance,  #bounds=bounds, 
+          tol=self.tolerance,  bounds=bounds, 
           options=options)
 
         opt_norm = result.x
