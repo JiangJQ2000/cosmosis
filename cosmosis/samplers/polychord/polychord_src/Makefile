@@ -17,7 +17,7 @@ else
 FFLAGS += -O3 -fPIC -ffree-line-length-none
 endif
 
-FFLAGS += -fno-stack-arrays
+FFLAGS += -fno-stack-arrays -fallow-argument-mismatch
 
 CHORDLIBDIR = ./
 
